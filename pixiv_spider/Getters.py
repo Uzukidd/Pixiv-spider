@@ -82,7 +82,7 @@ class LastestPicGetter :
 def main() :
 
     COOKIE = ""
-    # Use Your cookie if you want to login.
+    # Use cookie to login.
     try : 
         with open("./COOKIE.key") as ios:
             COOKIE = ios.readline()
@@ -90,22 +90,29 @@ def main() :
         print("COOKIE.key not found")
 
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
-    PROIXES = {"http":"socks5://127.0.0.1:10808", 
+    # User-Agent
+    
+    PROXIES = {"http":"socks5://127.0.0.1:10808", 
     "https":"socks5://127.0.0.1:10808"}
+    # Proxies if needed
 
     keyword = "艦これ"
-    mode = "r18" #"r18" or "safe"
+    # Keyword for searching
+    
+    mode = "safe" #"r18" or "safe"
     # Logging in is necessary if using R-18 mode
 
     picker = LastestPicGetter(keyword, mode = mode,
     cookie = COOKIE,
     UA = UA, 
-    proxies = PROIXES)
+    proxies = PROXIES)
+    #Create a picker by get method
 
     for i in range(5, 6) :
 
         picker.request(i)
         picker.parsing()
+        # Request and parse data
 
         print("Result:", list(picker.result.keys()))
         print("Last page:", picker.last_page)
