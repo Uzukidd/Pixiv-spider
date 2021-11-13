@@ -1,8 +1,12 @@
 import json
 from urllib.parse import urlencode
 from tqdm import tqdm
-from .WebCraw.Utils import WebRequest
-from .Data_Struct import Arkwork
+try:
+    from .Web_Craw.Utils import WebRequest
+    from .Data_Struct import Arkwork
+except ImportError:
+    from Web_Craw.Utils import WebRequest
+    from Data_Struct import Arkwork
 
 class LastestPicGetter :
 
@@ -34,11 +38,13 @@ class LastestPicGetter :
     def has_requested(self) -> bool:
         return self.json is not None
 
-    def request(self, page:int) -> None:
+    def request(self, page:int = 0) -> None:
         arg = {
-            "p":page,
             "word":self.keyword
         }
+        if page > 0 :
+            arg["p"] = page
+        
         if self.mode in LastestPicGetter.MODE :
             arg["mode"] = self.mode
         
@@ -51,7 +57,7 @@ class LastestPicGetter :
         self.json = json.loads(self.request_current.text)
         self.request_current.close()
 
-    def analyze(self) -> None:
+    def parsing(self) -> None:
         assert self.has_requested()
 
         self.last_page = self.json['body']['lastPage']
@@ -78,10 +84,10 @@ def main() :
     COOKIE = ""
     # Use Your cookie if you want to login.
     try : 
-        with open("COOKIE.key") as ios:
+        with open("./COOKIE.key") as ios:
             COOKIE = ios.readline()
     except :
-        pass
+        print("COOKIE.key not found")
 
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
     PROIXES = {"http":"socks5://127.0.0.1:10808", 
@@ -91,15 +97,15 @@ def main() :
     mode = "r18" #"r18" or "safe"
     # Logging in is necessary if using R-18 mode
 
-    picker = LastestPicGetter(keyword,
+    picker = LastestPicGetter(keyword, mode = mode,
     cookie = COOKIE,
     UA = UA, 
     proxies = PROIXES)
 
-    for i in range(1, 2) :
+    for i in range(5, 6) :
 
         picker.request(i)
-        picker.analyze()
+        picker.parsing()
 
         print("Result:", list(picker.result.keys()))
         print("Last page:", picker.last_page)
@@ -107,21 +113,6 @@ def main() :
         # picker.request_all()
         picker.download_path_all(".\\pics\\")
 
-
-        # for illust in picker.json['body']['illusts'] :
-        #     if('id' in illust) : 
-        #         print(illust['id'])
-        #         artwork = Arkwork(illust['id'], cookie = COOKIE,
-        #         UA = UA, 
-        #         proxies = PROIXES)
-        #         artwork.request()
-        #         print("pages:%d" % artwork.page_count)
-        #         print("type:" + artwork.type)
-
-        #         artwork.download_path("pics\\")
-
-        #         # print(artwork.src["original"])
-        #     else : print("None Id")
 
 if __name__ == "__main__":
     main()
