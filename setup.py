@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = "Pixiv-Web-Crawler",
-    version = "1.1.0",
+    name = "Pixiv-Spider",
+    version = "1.1.4",
     license = "MIT",
-    description='Implementation of Pixiv Web Crawler',
+    description='Implementation of Pixiv Web Spider',
     url = "https://github.com/Uzukidd",
     download_url = "https://github.com/Uzukidd/Pixiv-web-crawler", 
     author = "Uzukidd",
