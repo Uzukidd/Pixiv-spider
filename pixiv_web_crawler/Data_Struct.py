@@ -1,7 +1,7 @@
 import json
 import requests
 import os
-from WebCraw.Utils import WebRequest
+from .WebCraw.Utils import WebRequest
 
 class Arkwork :
 
@@ -50,9 +50,11 @@ class Arkwork :
 
         self.request_current.close()
 
-        # print(self.json["body"])
+    def has_requested(self) -> bool:
+        return self.json is not None
 
-    def download_path(self, path:str, pages = None):
+    def download_path(self, path:str, pages = None) -> None:
+        assert self.has_requested()
 
         pic = None
 
@@ -70,10 +72,9 @@ class Arkwork :
         for page in pages :
             while(pic == None or pic.status_code != 200) :
                 try:
-                    print("Try getting:" + self.images[page])
                     pic = requests.get(self.images[page], timeout = 100, headers = headers, proxies = self.proxies)
                 except requests.exceptions.ConnectionError:
-                    print('图片无法下载')
+
                     return
             if self.type == "manga" :
                 dir = path + self.id+ "_p%d.png" % page

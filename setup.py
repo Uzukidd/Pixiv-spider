@@ -1,26 +1,18 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = "Pixiv Web Crawler",
+    name = "Pixiv-Web-Crawler",
     version = "1.1.0",
-    # keywords = (),
-    # description = "eds sdk",
-    # long_description = "eds sdk for python",
-    license = "MIT Licence",
-
-    # url = "http://test.com",
-    author = "Uzuki",
+    license = "MIT",
+    description='Implementation of Pixiv Web Crawler',
+    url = "https://github.com/Uzukidd",
+    download_url = "https://github.com/Uzukidd/Pixiv-web-crawler", 
+    author = "Uzukidd",
     author_email = "uzukidd@gmail.com",
+    install_requires=['tqdm',
+    'requests'
+                ],
 
-    packages = find_packages(),
-    include_package_data = True,
-    platforms = "any",
-    install_requires = [""],
+    packages = find_packages()
 
-    scripts = [],
-    entry_points = {
-        'console_scripts': [
-            'test = test.help:main'
-        ]
-    }
 )
