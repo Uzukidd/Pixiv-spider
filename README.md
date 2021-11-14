@@ -19,9 +19,19 @@ A Pixiv spider module
 
 ​	Name changed to \"Pixiv-spider\", bugs fixed, ugoira added.
 
+## Requirements
+
+tqdm
+
+requests
+
+imageio
+
+zipfile
+
 ## Installation
 
-Clone or download this repository than get into it and input on your terminal:
+Clone or download this repository than get into it and input this on your terminal:
 
 ```
 python ./setup.py install
@@ -31,12 +41,15 @@ python ./setup.py install
 
 classes
 
-- LastestPicGetter -  Picker to get the lastest artwork by get method
-- Artwork - Format to request and parse artwork data
+- LastestPicGetter -  Picker to get the lastest artworks by get method
+- Artwork - Format to request and parse artworks
 
 ## Example
 
 ```python
+from pixiv_spider.Getters import LastestPicGetter
+
+
 def main() :
 
     COOKIE = ""
@@ -50,8 +63,10 @@ def main() :
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
     # User-Agent
     
-    PROXIES = {"http":"socks5://127.0.0.1:10808", 
-    "https":"socks5://127.0.0.1:10808"}
+    # PROIXES = {"http":"socks5://127.0.0.1:10808", 
+    # "https":"socks5://127.0.0.1:10808"}
+    
+    PROIXES = None
     # Proxies if needed
 
     keyword = "艦これ"
@@ -64,9 +79,10 @@ def main() :
     cookie = COOKIE,
     UA = UA, 
     proxies = PROXIES)
-    #Create a picker by get method
-
-    for i in range(5, 6) :
+    # Create a picker by get method
+	
+    # Download images from page 1 to page 2
+    for i in range(1, 3) :
 
         picker.request(i)
         picker.parsing()
@@ -74,11 +90,52 @@ def main() :
         print("Result:", list(picker.result.keys()))
         print("Last page:", picker.last_page)
 
-        # picker.request_all()
         picker.download_path_all(".\\pics\\")
 
-
 if __name__ == "__main__":
+    main()
+```
+
+```python
+from pixiv_spider.Data_Struct import Arkwork
+
+def main() -> None :
+    
+    COOKIE = ""
+    # Generally, there is no need for cookie to download an r18 artwork instead of search
+
+    UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
+    
+    # PROIXES = {"http":"socks5://127.0.0.1:10808", 
+    # "https":"socks5://127.0.0.1:10808"}
+    
+    PROIXES = None
+    # Proxies if needed
+
+    test_id = [
+        "91712657", # ugoira(r18)
+        # "88826080", # ugoira
+        "93615483", # manga
+        "93470614"  # illust
+    ]
+
+    for i in test_id :
+        artwork = Arkwork(i, 
+        cookie = COOKIE,
+        UA = UA, 
+        proxies = PROIXES)
+        artwork.request()
+
+        print("id:", artwork.id)
+        print("pages:%d" % artwork.page_count)
+        print("type:" + artwork.type)
+        print("Image:", artwork.images)
+
+        if artwork.is_ugoira : artwork.download_path_gif("pics\\")
+
+        artwork.download_path("pics\\")
+
+if __name__ == "__main__" :
     main()
 ```
 
