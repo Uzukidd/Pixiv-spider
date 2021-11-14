@@ -2,11 +2,15 @@ import json
 import requests
 import os
 import io
+import imageio
 import zipfile
+
 try:
     from .Web_Craw.Utils import WebRequest
+    from .Utils import zip2gif, extract_zip
 except ImportError:
     from Web_Craw.Utils import WebRequest
+    from Utils import zip2gif, extract_zip
 
 class Arkwork :
 
@@ -33,12 +37,13 @@ class Arkwork :
         self.page_count = -1
         self.images = []
         self.ugoira_zip = []
+        self.ugoira_durations = []
         self.is_ugoira = False
         self.cookie = cookie
         self.UA = UA
         self.proxies = proxies
 
-    def request(self) :
+    def request(self) -> None :
 
         self.request_current = WebRequest.get(Arkwork.STANDARD_URL_TEMPLATE % self.id, headers = {
             'User-Agent': self.UA, 
@@ -47,21 +52,27 @@ class Arkwork :
 
         self.json = json.loads(self.request_current.text)
 
+        # If any errors
         if self.json["error"] :
             print(self.json["message"])
             return
 
+        # Parsing the json
         self.src = self.json["body"]
         self.detail = self.src["illust_details"]
         self.page_count = int(self.detail["page_count"])
         self.images.clear()
 
+        # If it's a manga (comic)
         if "manga_a" in self.detail : 
             self.type = "manga"
             for image in self.detail["manga_a"] :
                 self.images.append(image["url_big"])
         else :
+            # If it's an illustration
             self.type = "illust"
+
+            # If it's an ugoira (animation)
             if self.detail["ugoira_meta"] is None :
                 self.is_ugoira = False
                 self.images.append(self.detail["url_big"])
@@ -69,15 +80,19 @@ class Arkwork :
                 self.is_ugoira = True
                 self.images.append(self.detail["ugoira_meta"]["src"])
 
+                durations_temp = []
+                for frame in self.detail["ugoira_meta"]["frames"] :
+                    # Unit conversion (ms -> s)
+                    durations_temp.append(frame["delay"] * 0.001)
+                self.ugoira_durations.append(durations_temp)    
+
         self.request_current.close()
 
     def has_requested(self) -> bool:
         return self.json is not None
 
-    def download_path(self, path:str, pages = None) -> None:
+    def download(self, pages = None) -> bytes :
         assert self.has_requested()
-
-        pic = None
 
         headers = {
             'User-Agent':self.UA, 
@@ -85,18 +100,50 @@ class Arkwork :
             "cookie" : self.cookie
         }
 
+        # None means all
         if pages is None: 
             pages = range(0, self.page_count)
 
         for page in pages :
-            while(pic == None or pic.status_code != 200) :
+            pic = None
+            while(pic is None or pic.status_code != 200) :
                 try:
                     pic = requests.get(self.images[page], timeout = 100, headers = headers, proxies = self.proxies)
                 except requests.exceptions.ConnectionError:
                     return
             
+            yield (pic.content, page)
+            pic.close()
+
+        
+    def download_path_gif(self, path:str) -> None:
+        assert self.has_requested()
+        assert self.is_ugoira
+
+        for image, page in self.download([0]) :
+        
+            dir = os.path.join(path, self.id+ ".gif")
+
+            if(not os.path.exists(path)) : 
+                os.mkdir(path)
+
+            fp = open(dir, 'wb')
+            fp.write(zip2gif(image, self.ugoira_durations[0]))
+            fp.close()
+
+    def download_path(self, path:str, pages = None) -> None:
+        assert self.has_requested()
+
+        if pages is None: 
+            pages = range(0, self.page_count)
+
+        if self.type == "manga" :
+            path = os.path.join(path , self.id)
+
+        for image, page in self.download(pages) :
+            
             if self.type == "manga" :
-                dir = os.path.join(path, self.id+ "_p%d.png" % page)
+                dir = os.path.join(path , self.id+ "_p%d.png" % page)
             elif self.type == "illust" :
                 if self.is_ugoira :
                     dir = os.path.join(path, self.id)
@@ -105,39 +152,55 @@ class Arkwork :
 
             if(not os.path.exists(path)) : 
                 os.mkdir(path)
+            
+            # If it's an ugoira (animation)
+            if(self.is_ugoira and not os.path.exists(dir)) :
+                os.mkdir(dir)
 
             if not self.is_ugoira :
                 fp = open(dir, 'wb')
-                fp.write(pic.content)
+                fp.write(image)
                 fp.close()
             else:
-                buffer = io.BytesIO(initial_bytes = pic.content)
-                zip_file = zipfile.ZipFile(file = buffer)
-                for file_name in zip_file.namelist():
-                    zip_file.extract(file_name, dir)
-                zip_file.close()
+                for img, name in extract_zip(image) :
+                    fp = open(os.path.join(dir, name), 'wb')
+                    fp.write(img)
+                    fp.close()
                 
-
-            pic.close()
-            pic = None
 
             
 
 def main() -> None :
+    # Generally, cookie is no need when downloading an r18 artwork instead of searching
     COOKIE = ""
+
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36"
+    
     PROIXES = {"http":"socks5://127.0.0.1:10808", 
     "https":"socks5://127.0.0.1:10808"}
-    artwork = Arkwork("91712657", 
-    cookie = COOKIE,
-    UA = UA, 
-    proxies = PROIXES)
-    artwork.request()
-    print("pages:%d" % artwork.page_count)
-    print("type:" + artwork.type)
-    print("Image:", artwork.images)
-    # print(artwork.json)
-    artwork.download_path("pics\\")
+
+    test_id = [
+        "91712657", # ugoira(r18)
+        "88826080", # ugoira
+        "93615483", # manga
+        "93470614"  # illust
+    ]
+
+    for i in test_id :
+        artwork = Arkwork(i, 
+        cookie = COOKIE,
+        UA = UA, 
+        proxies = PROIXES)
+        artwork.request()
+
+        print("id:", artwork.id)
+        print("pages:%d" % artwork.page_count)
+        print("type:" + artwork.type)
+        print("Image:", artwork.images)
+
+        if artwork.is_ugoira : artwork.download_path_gif("pics\\")
+
+        artwork.download_path("pics\\")
 
 if __name__ == "__main__" :
     main()

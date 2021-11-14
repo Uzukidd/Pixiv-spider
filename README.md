@@ -6,6 +6,10 @@ It's an unfinished work, browsing the code carefully before using it.
 
 ## Features
 
+0005 -
+
+​	Now parsing a ugoira (animation) is supported, bugs fixed.
+
 0004 -
 
 ​	Readme.md updated, comments fixed, variable names fixed.
