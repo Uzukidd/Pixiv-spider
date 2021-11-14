@@ -98,7 +98,7 @@ def main() :
     "https":"socks5://127.0.0.1:10808"}
     # Proxies if needed
 
-    keyword = "艦これ 00users"
+    keyword = "艦これ"
     # Keyword for searching
     
     mode = "r18" #"r18" or "safe"
@@ -110,7 +110,7 @@ def main() :
     proxies = PROXIES)
     #Create a picker by get method
 
-    for i in range(1, 3) :
+    for i in range(1, 5) :
 
         picker.request(i)
         picker.parsing()
