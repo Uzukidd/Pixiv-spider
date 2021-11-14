@@ -11,7 +11,8 @@ setup(
     author_email = "uzukidd@gmail.com",
     install_requires=['tqdm',
                 'requests',
-                'imageio'
+                'imageio',
+                'zipfile'
                 ],
 
     packages = find_packages()

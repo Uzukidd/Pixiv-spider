@@ -1,10 +1,11 @@
 # Pixiv-spider
 A Pixiv spider module
 
-## WARNING
-It's an unfinished work, browsing the code carefully before using it.
-
 ## Features
+
+0006 -
+
+​	Now choosing different qualities of a artwork supported, bugs fixed.
 
 0005 -
 

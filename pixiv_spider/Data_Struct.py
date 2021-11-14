@@ -1,9 +1,6 @@
 import json
 import requests
 import os
-import io
-import imageio
-import zipfile
 
 try:
     from .Web_Craw.Utils import WebRequest
@@ -11,6 +8,23 @@ try:
 except ImportError:
     from Web_Craw.Utils import WebRequest
     from Utils import zip2gif, extract_zip
+
+class Image_Set :
+
+    QUALITY = {
+        "small", 
+        "medium",
+        "origin"
+    }
+
+    def __init__(self, small, medium, origin):
+
+        self.images = {
+            "small" : small,
+            "medium" : medium,
+            "origin" : origin
+        }
+
 
 class Arkwork :
 
@@ -67,7 +81,10 @@ class Arkwork :
         if "manga_a" in self.detail : 
             self.type = "manga"
             for image in self.detail["manga_a"] :
-                self.images.append(image["url_big"])
+                self.images.append(Image_Set(image["url_small"], 
+                image["url"], 
+                image["url_big"]))
+
         else :
             # If it's an illustration
             self.type = "illust"
@@ -75,23 +92,29 @@ class Arkwork :
             # If it's an ugoira (animation)
             if self.detail["ugoira_meta"] is None :
                 self.is_ugoira = False
-                self.images.append(self.detail["url_big"])
+                self.images.append(Image_Set(self.detail["url_placeholder"], 
+                self.detail["url"], 
+                self.detail["url_big"]
+                ))
+
             else :
                 self.is_ugoira = True
-                self.images.append(self.detail["ugoira_meta"]["src"])
+                self.images.append(Image_Set(None, 
+                None, 
+                self.detail["ugoira_meta"]["src"]))
 
                 durations_temp = []
                 for frame in self.detail["ugoira_meta"]["frames"] :
                     # Unit conversion (ms -> s)
                     durations_temp.append(frame["delay"] * 0.001)
-                self.ugoira_durations.append(durations_temp)    
+                self.ugoira_durations.append(durations_temp)
 
         self.request_current.close()
 
     def has_requested(self) -> bool:
         return self.json is not None
 
-    def download(self, pages = None) -> bytes :
+    def download(self, pages = None, quality = "origin") -> bytes :
         assert self.has_requested()
 
         headers = {
@@ -99,6 +122,8 @@ class Arkwork :
             'Referer' : Arkwork.STANDARD_URL_TEMPLATE % self.id, 
             "cookie" : self.cookie
         }
+
+        assert quality in Image_Set.QUALITY
 
         # None means all
         if pages is None: 
@@ -108,7 +133,7 @@ class Arkwork :
             pic = None
             while(pic is None or pic.status_code != 200) :
                 try:
-                    pic = requests.get(self.images[page], timeout = 100, headers = headers, proxies = self.proxies)
+                    pic = requests.get(self.images[page].images[quality], timeout = 100, headers = headers, proxies = self.proxies)
                 except requests.exceptions.ConnectionError:
                     return
             
@@ -181,7 +206,7 @@ def main() -> None :
 
     test_id = [
         "91712657", # ugoira(r18)
-        "88826080", # ugoira
+        # "88826080", # ugoira
         "93615483", # manga
         "93470614"  # illust
     ]
