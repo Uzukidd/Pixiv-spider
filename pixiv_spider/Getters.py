@@ -19,7 +19,7 @@ class LastestPicGetter :
     TYPE = {
         "manga", 
         "illustrations", 
-        "novels"
+        "novels" # Not yet supported now
     }
 
     def __init__(self, keyword:str, mode:str = None, cookie:str = "", UA:str = "", proxies:dict = {}) :
@@ -75,8 +75,10 @@ class LastestPicGetter :
         for illust in tqdm(self.result.values()): 
             if not illust.has_requested():
                 illust.request()
-            
-            illust.download_path(path)
+            if illust.is_ugoira :
+                illust.download_path_gif(path)
+            else :
+                illust.download_path(path)
 
 
 def main() :
@@ -96,10 +98,10 @@ def main() :
     "https":"socks5://127.0.0.1:10808"}
     # Proxies if needed
 
-    keyword = "艦これ"
+    keyword = "艦これ 00users"
     # Keyword for searching
     
-    mode = "safe" #"r18" or "safe"
+    mode = "r18" #"r18" or "safe"
     # Logging in is necessary if using R-18 mode
 
     picker = LastestPicGetter(keyword, mode = mode,
@@ -108,7 +110,7 @@ def main() :
     proxies = PROXIES)
     #Create a picker by get method
 
-    for i in range(5, 6) :
+    for i in range(1, 3) :
 
         picker.request(i)
         picker.parsing()
